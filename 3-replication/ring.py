@@ -26,14 +26,29 @@ class ConsistentHashRing:
             self.ring[hash_val] = node
             bisect.insort(self._keys, hash_val)
 
-    def get_node(self, key: str):
-        """Get the node that should hold the given key"""
-        #Find hash of the key
+    def get_nodes(self, key: str, Rf: int):
+        """Get the nodes that should hold the given key per replication factor"""
+        
+        #handle the case when no key is added
+        if len(self._keys) == 0:
+            return []
+        
+        selected_nodes = list()
         key_hash = self._hash(key)
-
+        
         # Get the index of this hash. As index returned by bisect could be out of bound for given hash
         # modulo opeorator bound it to the size of _keys structure and also makes the ring circular
-        idx = bisect.bisect(self._keys, key_hash) % len(self._keys)
+        start_idx = bisect.bisect(self._keys, key_hash) % len(self._keys)
+        i = start_idx
+        while len(selected_nodes) < Rf:
+            node = self.ring[self._keys[i % len(self._keys)]]
+            if node not in selected_nodes:
+                selected_nodes.append(node)
+            i += 1
+        
+        return selected_nodes
+            
+
 
         #Use idx to the get node in the ring
         return self.ring[self._keys[idx]]
